@@ -33,11 +33,11 @@ public class TaskController {
         return taskService.createTask(task);
     }
 
-    // Delete task
     @DeleteMapping("/{id}")
     public void deleteTask(@PathVariable Long id) {
-        taskService.deleteTask(id);
-    }
+    taskService.deleteTask(id);
+}
+
 
     // Update task (editing task)
     @PutMapping("/{id}")
