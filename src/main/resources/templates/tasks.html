@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        input[type="text"] {
+            width: calc(100% - 50px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #fafafa;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .task-item.completed {
+            text-decoration: line-through;
+            background-color: #d4edda;
+        }
+        .task-item button {
+            background-color: #f44336;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Task Manager</h1>
+        <input type="text" id="taskInput" placeholder="Add a new task" />
+        <button id="addTaskBtn">Add Task</button>
+        <ul class="task-list" id="taskList">
+            <!-- Task list will be populated here -->
+        </ul>
+    </div>
+
+    <script>
+        const apiUrl = "http://localhost:8080/tasks"; // Your backend API URL
+        const taskList = document.getElementById("taskList");
+        const taskInput = document.getElementById("taskInput");
+        const addTaskBtn = document.getElementById("addTaskBtn");
+
+        // Fetch tasks from backend
+        function fetchTasks() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(tasks => {
+                    taskList.innerHTML = "";
+                    tasks.forEach(task => {
+                        const li = document.createElement("li");
+                        li.className = "task-item" + (task.completed ? " completed" : "");
+                        li.innerHTML = `
+                            <span>${task.name}</span>
+                            <div>
+                                <button onclick="deleteTask(${task.id})">Delete</button>
+                                <button onclick="toggleTaskCompleted(${task.id})">
+                                    ${task.completed ? "Unmark" : "Mark as Completed"}
+                                </button>
+                            </div>
+                        `;
+                        taskList.appendChild(li);
+                    });
+                })
+                .catch(error => console.log("Error fetching tasks:", error));
+        }
+
+        // Add a new task
+        addTaskBtn.addEventListener("click", () => {
+            const taskName = taskInput.value.trim();
+            if (taskName) {
+                const newTask = { name: taskName, completed: false };
+
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(newTask)
+                })
+                .then(response => response.json())
+                .then(() => {
+                    taskInput.value = "";
+                    fetchTasks(); // Refresh the task list
+                })
+                .catch(error => console.log("Error adding task:", error));
+            }
+        });
+
+        // Delete a task
+        function deleteTask(taskId) {
+            fetch(`${apiUrl}/${taskId}`, {
+                method: "DELETE"
+            })
+            .then(() => fetchTasks()) // Refresh task list after delete
+            .catch(error => console.log("Error deleting task:", error));
+        }
+
+        // Toggle task completion status
+        function toggleTaskCompleted(taskId) {
+            fetch(`${apiUrl}/${taskId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ completed: true })
+            })
+            .then(() => fetchTasks()) // Refresh task list after toggle
+            .catch(error => console.log("Error toggling task completion:", error));
+        }
+
+        // Initial fetch of tasks when page loads
+        fetchTasks();
+    </script>
+
+</body>
+</html>
